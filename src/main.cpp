@@ -1,6 +1,6 @@
 #include <Arduino.h>
 
-//ethernet jethome e1-pd76-r5
+//ethernet jethub e1-pd76-r5
 #define ETH_PHY_ADDR  1
 #define ETH_CLK_MODE  ETH_CLOCK_GPIO17_OUT
 #define ETH_MDC_PIN   23
@@ -9,23 +9,20 @@
 #include <ETH.h>
 #include <PCF8575.h>
 
-
-
-
 TwoWire I2Cone = TwoWire(0);
 
-//gpio extender jethome e1-pd76-r5
+//gpio extender jethub e1-pd76-r5
 PCF8575 pcf8575(&I2Cone,0x22);
 
-
 static bool eth_connected = false;
+int disconnect_count = 0;
 
 void WiFiEvent(WiFiEvent_t event)
 {
   switch (event) {
     case ARDUINO_EVENT_ETH_START:
       Serial.println("ETH Started");
-      ETH.setHostname("esp32-executor");
+      ETH.setHostname("jethub-e1-pd76-r5");
       break;
     case ARDUINO_EVENT_ETH_CONNECTED:
       Serial.println("ETH Connected");
@@ -46,6 +43,7 @@ void WiFiEvent(WiFiEvent_t event)
     case ARDUINO_EVENT_ETH_DISCONNECTED:
       Serial.println("ETH Disconnected");
       eth_connected = false;
+      Serial.print(ETH.macAddress());
       break;
     case ARDUINO_EVENT_ETH_STOP:
       Serial.println("ETH Stopped");
@@ -61,9 +59,9 @@ void setup() {
 
   Serial.print("Init i2c...");
   if(I2Cone.begin(5,4,400000U)){
-		Serial.println("OK");
+    Serial.println("OK");
   }else{
-		Serial.println("KO");
+    Serial.println("KO");
   }
   // Relay 1 (NO/NC)
   pcf8575.pinMode(8, OUTPUT);
@@ -77,16 +75,23 @@ void setup() {
   pcf8575.pinMode(12, OUTPUT);
   
   pcf8575.begin();
+  
+  //inversion logic, LOW=ON, HIGH=OFF
 
+  pcf8575.digitalWrite(8,HIGH);
+  pcf8575.digitalWrite(9,HIGH);
+  pcf8575.digitalWrite(10,HIGH);
+  pcf8575.digitalWrite(11,HIGH);
+  pcf8575.digitalWrite(12,HIGH);
 
   WiFi.onEvent(WiFiEvent);
 
   Serial.print("Init ethernet...");
 
   if(ETH.begin()){
-		Serial.println("OK");
+    Serial.println("OK");
   }else{
-		Serial.println("KO");
+    Serial.println("KO");
   }
 }
 
